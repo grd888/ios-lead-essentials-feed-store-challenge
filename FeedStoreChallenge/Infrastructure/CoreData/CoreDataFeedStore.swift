@@ -32,9 +32,7 @@ public final class CoreDataFeedStore: FeedStore {
 		let context = self.context
 		context.perform {
 			do {
-				let fetchRequest = NSFetchRequest<ManagedCache>(entityName: ManagedCache.entity().name!)
-				fetchRequest.returnsObjectsAsFaults = false
-				if let cache = try context.fetch(fetchRequest).first {
+				if let cache = try ManagedCache.find(in: context) {
 					completion(.found(feed: cache.localFeed, timestamp: cache.timestamp))
 				} else {
 					completion(.empty)
@@ -53,9 +51,11 @@ public final class CoreDataFeedStore: FeedStore {
 				let cache = try ManagedCache.newUniqueInstance(in: context)
 				cache.timestamp = timestamp
 				cache.feed = ManagedFeedImage.images(from: feed, in: context)
+
 				try context.save()
 				completion(nil)
 			} catch {
+				context.rollback()
 				completion(error)
 			}
 		}
